@@ -73,18 +73,14 @@ int removeSpaces(char* plain, int ps)
 string generateKeyTable_enc(char key[], int ks, char keyT[5][5])
 {
     int i, j, k, flag = 0;
-
     int dicty[26] = { 0 };
     for (i = 0; i < ks; i++) {
         if (key[i] != 'j')
             dicty[key[i] - 97] = 2;
     }
-
     dicty['j' - 97] = 1;
-
     i = 0;
     j = 0;
-
     for (k = 0; k < ks; k++) {
         if (dicty[key[k] - 97] == 2) {
             dicty[key[k] - 97] -= 1;
@@ -96,7 +92,6 @@ string generateKeyTable_enc(char key[], int ks, char keyT[5][5])
             }
         }
     }
-
     for (k = 0; k < 26; k++) {
         if (dicty[k] == 0) {
             keyT[i][j] = (char)(k + 97);
@@ -146,16 +141,12 @@ string generateKeyTable_dec(char key[], int ks, char keyT[5][5]){
 void search(char keyT[5][5], char a, char b, int arr[])
 {
     int i, j;
-
     if (a == 'j')
         a = 'i';
     else if (b == 'j')
         b = 'i';
-
     for (i = 0; i < 5; i++) {
-
         for (j = 0; j < 5; j++) {
-
             if (keyT[i][j] == a) {
                 arr[0] = i;
                 arr[1] = j;
@@ -182,11 +173,8 @@ int prepare(char str[], int ptrs)
 string encrypt(char str[], char keyT[5][5], int ps)
 {
     int i, a[4];
-
     for (i = 0; i < ps; i += 2) {
-
         search(keyT, str[i], str[i + 1], a);
-
         if (a[0] == a[2]) {
             str[i] = keyT[a[0]][mod_5(a[1] + 1)];
             str[i + 1] = keyT[a[0]][mod_5(a[3] + 1)];
@@ -206,19 +194,14 @@ string encrypt(char str[], char keyT[5][5], int ps)
 string encryptByPlayfairCipher(char str[], char key[])
 {
     char ps, ks, keyT[5][5];
-
     ks = strlen(key);
     ks = removeSpaces(key, ks);
     toLowerCase(key, ks);
-
     ps = strlen(str);
     toLowerCase(str, ps);
     ps = removeSpaces(str, ps);
-
     ps = prepare(str, ps);
-
     generateKeyTable_enc(key, ks, keyT);
-
     string s1=encrypt(str, keyT, ps);
     cout<<"Your Encrypted Message is: "<<s1<<endl;
     return s1;
@@ -256,19 +239,15 @@ string decrypt(char str[], char keyT[5][5], int ps)
 string decryptByPlayfairCipher(char str[], char key[])
 {
     char ps, ks, keyT[5][5];
-
     // Key
     ks = strlen(key);
     ks = removeSpaces(key, ks);
     toLowerCase(key, ks);
-
     // ciphertext
     ps = strlen(str);
     toLowerCase(str, ps);
     ps = removeSpaces(str, ps);
-
     generateKeyTable_dec(key, ks, keyT);
-
     string s1=decrypt(str, keyT, ps);
     cout<<"Your Decrypted Message is: "<<s1<<endl;
     return s1;
@@ -276,27 +255,22 @@ string decryptByPlayfairCipher(char str[], char key[])
 
 int main() {
     map<string, string> user_data;
-
     while (true) {
         cout << "**********************************" << endl;
         cout << "* HELLO !! WELCOME TO ENCRYPTION *" << endl;
         cout << "* DECRYPTION INTERFACE MADE BY   *" << endl;
         cout << "* YASH RATHORE AND HEMANT JHA    *" << endl;
         cout << "**********************************" << endl<<endl<<endl;
-
         cout << "* CAESAR ENCRYPTION AND DECRYPTION USE NUMERIC KEY *" << endl;
         cout << "* VIGENERE ENCRYPTION AND DECRYPTION USE WORD AS KEY *" << endl;
         cout << "* PLAYFAIR ENCRYPTION AND DECRYPTION USE BOTH KEY AND MESSAGE AS SINGLE WORD *" << endl<< endl<< endl;
-
         cout << "******************************" << endl;
         cout << "*_______ 1.REGISTER _________*" << endl;
         cout << "*_______ 2.LOGIN ____________*" << endl;
         cout << "*_______ 3.QUIT _____________*" << endl;
         cout << "******************************" << endl;
-
         int choice;
         cin >> choice;
-
         if (choice == 1) {
             string username, password;
             cout << "Enter your username: ";
@@ -305,43 +279,35 @@ int main() {
             cin >> password;
             user_data[username] = password;
             cout << "REGISTRATION SUCCESSFUL. YOUR PASSWORD IS: " << password << endl;
-
         } else if (choice == 2) {
             string username, password;
             cout << "Enter your username: ";
             cin >> username;
             cout << "Enter your password: ";
             cin >> password;
-
             if (user_data.find(username) != user_data.end() && user_data[username] == password) {
                 cout << "Login Successful." << endl;
-
                 while (true) {
                     cout << "**************************" << endl;
                     cout << "*______ 1.ENCRYPT _______*" << endl;
                     cout << "*______ 2.DECRYPT _______*" << endl;
                     cout << "*______ 3.LOGOUT  _______*" << endl;
                     cout << "**************************" << endl;
-
                     int sub_choice;
                     cin >> sub_choice;
-
                     if (sub_choice == 1) {
                         string message;
                         cout << "Enter the message to Encrypt: ";
                         cin.ignore();
                         getline(cin, message);
-
                         cout << "************************************" << endl;
                         cout << "*    Select an encryption method   *" << endl;
                         cout << "*    1. Caesar Cipher              *" << endl;
                         cout << "*    2. Vigenere Cipher            *" << endl;
                         cout << "*    3. Playfair Cipher            *" << endl;
                         cout << "************************************" << endl;
-
                         int encryption_method;
                         cin >> encryption_method;
-
                         if (encryption_method == 1) {
                             int shift;
                             cout << "Enter the Caesar Cipher shift: ";
@@ -371,17 +337,14 @@ int main() {
                         cout << "Enter the message to decrypt: ";
                         cin.ignore();
                         getline(cin, encrypted_message);
-
                         cout << "************************************" << endl;
                         cout << "*    Select an decryption method   *" << endl;
                         cout << "*    1. Caesar Cipher              *" << endl;
                         cout << "*    2. Vigenere Cipher            *" << endl;
                         cout << "*    3. Playfair Cipher            *" << endl;
                         cout << "************************************" << endl;
-
                         int decryption_method;
                         cin >> decryption_method;
-
                         if (decryption_method == 1) {
                             int shift;
                             cout << "Enter the Caesar Cipher shift: ";
@@ -425,6 +388,5 @@ int main() {
             cout << "Invalid option. Please try again." << endl;
         }
     }
-
     return 0;
 }
