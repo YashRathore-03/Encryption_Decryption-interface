@@ -1,44 +1,51 @@
-This C++ code is an application for user registration, login, and message encryption/decryption using Caesar, Vigenère, and RSA encryption methods. It leverages the OpenSSL library for RSA operations. Here is a summary of its main components and functionality:
+### Program Overview and Functionalities
 
-### Key Functionalities:
-1. **Caesar Cipher Encryption and Decryption:**
-   - `caesar_cipher_encrypt`: Shifts each alphabetic character in the input text by a specified number of positions.
-   - `caesar_cipher_decrypt`: Shifts each alphabetic character in the input text backward by the specified number of positions.
+This C++ program is designed as an interactive encryption and decryption interface that includes user registration and login functionalities. It supports three types of ciphers: Caesar, Vigenère, and Playfair. Below is a detailed explanation of each component and its role in the program.
 
-2. **Vigenère Cipher Encryption and Decryption:**
-   - `vigenere_cipher_encrypt`: Uses a repeating key to shift each alphabetic character in the input text.
-   - `vigenere_cipher_decrypt`: Uses the same key to reverse the Vigenère encryption.
+#### Libraries and Definitions:
+- **Libraries:** The program includes standard libraries for input/output operations, string manipulation, and using maps.
+- **Constant Definitions:** `SIZE` is defined as 100, used for array size declarations.
 
-3. **RSA Key Pair Generation, Encryption, and Decryption:**
-   - `rsa_generate_key_pair`: Generates a pair of RSA keys (public and private) using OpenSSL.
-   - `rsa_encrypt`: Encrypts a message using the RSA public key.
-   - `rsa_decrypt`: Decrypts a message using the RSA private key (although decryption is not fully integrated in the main program loop).
+#### Caesar Cipher:
+1. **Encryption (`caesar_enc`):**
+   - This function shifts each letter of the input text by a specified number of positions (`s`) in the alphabet. It handles both uppercase and lowercase letters separately to maintain case.
 
-### Main Application Logic:
-1. **User Registration and Login:**
-   - Users can register by providing a username. A placeholder password ("password") is used for demonstration.
-   - Users can log in by providing their username and password.
+2. **Decryption (`caesar_dec`):**
+   - Decryption is achieved by using the same encryption function with a shift value of `26 - s`, effectively reversing the encryption process.
 
-2. **Encryption/Decryption Workflow:**
-   - After a successful login, users can choose to encrypt or decrypt messages.
-   - For encryption, users can select from Caesar Cipher, Vigenère Cipher, or RSA.
-   - For decryption, users can select from Caesar Cipher or Vigenère Cipher. RSA decryption is not fully implemented in the interactive part.
+#### Vigenère Cipher:
+1. **Encryption (`vigenere_enc`):**
+   - This function encrypts the input text using a repeating key to shift each character. The shift for each character is determined by the corresponding character in the key.
 
-### Program Flow:
-1. **Main Menu:**
-   - Users can choose to register, log in, or quit the application.
+2. **Decryption (`vigenere_dec`):**
+   - Decryption is performed similarly, using the key to reverse the shifts applied during encryption.
 
-2. **User Registration:**
-   - Prompts for a username and assigns a default password.
+#### Playfair Cipher:
+1. **Helper Functions:**
+   - Various helper functions handle tasks such as converting text to lowercase, removing spaces, generating the key table, searching for character positions in the key table, preparing text for encryption, and performing modular arithmetic for wrapping around the table.
 
-3. **User Login:**
-   - Prompts for username and password, then verifies credentials.
+2. **Encryption (`encryptByPlayfairCipher`):**
+   - This function encrypts the input text using the Playfair cipher method, which involves creating a 5x5 key table and encrypting digraphs (pairs of letters).
 
-4. **Post-Login Menu:**
-   - Users can choose to encrypt or decrypt a message, or log out.
+3. **Decryption (`decryptByPlayfairCipher`):**
+   - Decryption follows the same principles as encryption but reverses the steps to retrieve the original text.
 
-5. **Encryption/Decryption:**
-   - Depending on user choice, the program will prompt for necessary information (shift value for Caesar, key for Vigenère, or generate RSA keys) and perform the respective encryption or decryption.
+#### Main Program:
+1. **User Interface:**
+   - The main program provides an interactive user interface with options for registration, login, encryption, decryption, and quitting the program.
 
-### Summary:
-This program is a simple demonstration of user management combined with basic encryption techniques. It introduces users to cryptographic concepts and allows them to interactively encrypt and decrypt messages. RSA functionality is demonstrated, but full integration (especially RSA decryption) could be expanded for a complete feature set.
+2. **User Registration and Login:**
+   - Users can register by providing a username and password, which are stored in a map (`user_data`). Registered users can log in by providing their credentials.
+
+3. **Encryption and Decryption Options:**
+   - After logging in, users can choose to encrypt or decrypt messages.
+   - Users select the encryption or decryption method (Caesar, Vigenère, or Playfair) and provide the necessary inputs (message, shift/key).
+
+4. **Encryption/Decryption Process:**
+   - Depending on the user's choice, the program calls the appropriate encryption or decryption function, processes the input, and displays the result.
+
+5. **Logout and Exit:**
+   - Users can log out to return to the main menu or choose to exit the program.
+
+### Summary
+The program effectively combines user management with encryption and decryption functionalities. It allows users to register, log in, and securely encrypt/decrypt messages using three different cipher techniques. The interface guides users through selecting the appropriate method and entering the required data, making it an educational tool for understanding basic cryptographic principles.
