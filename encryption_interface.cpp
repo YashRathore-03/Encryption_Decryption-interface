@@ -1,234 +1,427 @@
 #include <iostream>
+#include <bits/stdc++.h>
 #include <string>
 #include <map>
-#include <openssl/rsa.h>
-#include <openssl/pem.h>
-#include <openssl/err.h>
-#include <openssl/rand.h>
+#define SIZE 100
 
-std::string caesar_cipher_encrypt(const std::string &text, int shift) {
-    std::string result = text;
-    for (char &c : result) {
-        if (isalpha(c)) {
-            char base = isupper(c) ? 'A' : 'a';
-            c = (c - base + shift) % 26 + base;
+using namespace std;
+
+string caesar_enc(string text, int s) {
+    string result = "";
+    for (int i = 0; i < text.length(); i++) {
+        if (isupper(text[i])) {
+            result += char(int(text[i] + s - 65) % 26 + 65);
+        } else {
+            result += char(int(text[i] + s - 97) % 26 + 97);
         }
     }
     return result;
 }
 
-std::string caesar_cipher_decrypt(const std::string &text, int shift) {
-    return caesar_cipher_encrypt(text, 26 - shift);
+string caesar_dec(string text, int s) {
+    // Decryption is the same as encryption with a negative shift
+    return caesar_enc(text, 26-s);
 }
 
-std::string vigenere_cipher_encrypt(const std::string &text, const std::string &key) {
-    std::string result = text;
-    int keyLength = key.length();
-    for (size_t i = 0; i < text.length(); ++i) {
+string vigenere_enc(string text, string key) {
+    string result = text;
+    int key_length = key.length();
+    for (int i = 0; i < text.length(); ++i) {
         if (isalpha(result[i])) {
             char base = isupper(result[i]) ? 'A' : 'a';
-            char shift = key[i % keyLength] - base;
-            result[i] = caesar_cipher_encrypt(result.substr(i, 1), shift)[0];
+            char shift = key[i % key_length] - base;
+            result[i] = caesar_enc(result.substr(i, 1), shift)[0];
         }
     }
     return result;
 }
 
-std::string vigenere_cipher_decrypt(const std::string &text, const std::string &key) {
-    std::string result = text;
-    int keyLength = key.length();
-    for (size_t i = 0; i < text.length(); ++i) {
+string vigenere_dec(string text, string key) {
+    string result = text;
+    int key_length = key.length();
+    for (int i = 0; i < text.length(); ++i) {
         if (isalpha(result[i])) {
             char base = isupper(result[i]) ? 'A' : 'a';
-            char shift = key[i % keyLength] - base;
-            result[i] = caesar_cipher_decrypt(result.substr(i, 1), shift)[0];
+            char shift = key[i % key_length] - base;
+            result[i] = caesar_dec(result.substr(i, 1), shift)[0];
         }
     }
     return result;
 }
 
-bool rsa_generate_key_pair(std::string &privateKey, std::string &publicKey) {
-    RSA *rsa = RSA_generate_key(2048, RSA_F4, nullptr, nullptr);
-    if (rsa) {
-        BIO *privateBio = BIO_new(BIO_s_mem());
-        BIO *publicBio = BIO_new(BIO_s_mem());
-        if (PEM_write_bio_RSAPrivateKey(privateBio, rsa, nullptr, nullptr, 0, nullptr, nullptr) &&
-            PEM_write_bio_RSA_PUBKEY(publicBio, rsa)) {
-            char *privateKeyData;
-            long privateKeySize = BIO_get_mem_data(privateBio, &privateKeyData);
-            privateKey.assign(privateKeyData, privateKeySize);
+string toLowerCase(char plain[], int ps)
+{
+    int i;
+    for (i = 0; i < ps; i++) {
+        if (plain[i] > 64 && plain[i] < 91)
+            plain[i] += 32;
+    }
+    return plain;
+}
 
-            char *publicKeyData;
-            long publicKeySize = BIO_get_mem_data(publicBio, &publicKeyData);
-            publicKey.assign(publicKeyData, publicKeySize);
+int removeSpaces(char* plain, int ps)
+{
+    int i, count = 0;
+    for (i = 0; i < ps; i++)
+        if (plain[i] != ' ')
+            plain[count++] = plain[i];
+    plain[count] = '\0';
+    return count;
+}
 
-            RSA_free(rsa);
-            BIO_free_all(privateBio);
-            BIO_free_all(publicBio);
-            return true;
+string generateKeyTable_enc(char key[], int ks, char keyT[5][5])
+{
+    int i, j, k, flag = 0;
+
+    int dicty[26] = { 0 };
+    for (i = 0; i < ks; i++) {
+        if (key[i] != 'j')
+            dicty[key[i] - 97] = 2;
+    }
+
+    dicty['j' - 97] = 1;
+
+    i = 0;
+    j = 0;
+
+    for (k = 0; k < ks; k++) {
+        if (dicty[key[k] - 97] == 2) {
+            dicty[key[k] - 97] -= 1;
+            keyT[i][j] = key[k];
+            j++;
+            if (j == 5) {
+                i++;
+                j = 0;
+            }
         }
-        RSA_free(rsa);
-        BIO_free_all(privateBio);
-        BIO_free_all(publicBio);
     }
-    return false;
+
+    for (k = 0; k < 26; k++) {
+        if (dicty[k] == 0) {
+            keyT[i][j] = (char)(k + 97);
+            j++;
+            if (j == 5) {
+                i++;
+                j = 0;
+            }
+        }
+    }
+    return key;
 }
 
-std::string rsa_encrypt(const std::string &publicKey, const std::string &message) {
-    RSA *rsa = RSA_new();
-    BIO *publicBio = BIO_new_mem_buf(publicKey.c_str(), -1);
-    PEM_read_bio_RSA_PUBKEY(publicBio, &rsa, nullptr, nullptr);
-    int rsaSize = RSA_size(rsa);
-    unsigned char *encrypted = new unsigned char[rsaSize];
-    int result = RSA_public_encrypt(message.length(), reinterpret_cast<const unsigned char *>(message.c_str()), encrypted, rsa, RSA_PKCS1_OAEP_PADDING);
-    std::string encryptedMessage;
-    if (result != -1) {
-        encryptedMessage.assign(reinterpret_cast<const char *>(encrypted), result);
-    }
-    RSA_free(rsa);
-    delete[] encrypted;
-    return encryptedMessage;
+string generateKeyTable_dec(char key[], int ks, char keyT[5][5]){
+    int i, j, k, flag = 0, *dicty;
+    // a 26 character hashmap
+    // to store count of the alphabet
+    dicty = (int*)calloc(26, sizeof(int));
+    for (i = 0; i < ks; i++) {
+        if (key[i] != 'j')
+            dicty[key[i] - 97] = 2;
+    }dicty['j' - 97] = 1;
+    i = 0;
+    j = 0;
+    for (k = 0; k < ks; k++) {
+        if (dicty[key[k] - 97] == 2) {
+            dicty[key[k] - 97] -= 1;
+            keyT[i][j] = key[k];
+            j++;
+            if (j == 5) {
+                i++;
+                j = 0;
+            }
+        }
+    }for (k = 0; k < 26; k++) {
+        if (dicty[k] == 0) {
+            keyT[i][j] = (char)(k + 97);
+            j++;
+            if (j == 5) {
+                i++;
+                j = 0;
+            }
+        }
+    }return key;
 }
 
-std::string rsa_decrypt(const std::string &privateKey, const std::string &encryptedMessage) {
-    RSA *rsa = RSA_new();
-    BIO *privateBio = BIO_new_mem_buf(privateKey.c_str(), -1);
-    PEM_read_bio_RSAPrivateKey(privateBio, &rsa, nullptr, nullptr);
-    int rsaSize = RSA_size(rsa);
-    unsigned char *decrypted = new unsigned char[rsaSize];
-    int result = RSA_private_decrypt(encryptedMessage.length(), reinterpret_cast<const unsigned char *>(encryptedMessage.c_str()), decrypted, rsa, RSA_PKCS1_OAEP_PADDING);
-    std::string decryptedMessage;
-    if (result != -1) {
-        decryptedMessage.assign(reinterpret_cast<const char *>(decrypted), result);
+void search(char keyT[5][5], char a, char b, int arr[])
+{
+    int i, j;
+
+    if (a == 'j')
+        a = 'i';
+    else if (b == 'j')
+        b = 'i';
+
+    for (i = 0; i < 5; i++) {
+
+        for (j = 0; j < 5; j++) {
+
+            if (keyT[i][j] == a) {
+                arr[0] = i;
+                arr[1] = j;
+            }
+            else if (keyT[i][j] == b) {
+                arr[2] = i;
+                arr[3] = j;
+            }
+        }
     }
-    RSA_free(rsa);
-    delete[] decrypted;
-    return decryptedMessage;
+}
+
+int mod_5(int a) { return (a % 5); }
+
+int prepare(char str[], int ptrs)
+{
+    if (ptrs % 2 != 0) {
+        str[ptrs++] = 'z';
+        str[ptrs] = '\0';
+    }
+    return ptrs;
+}
+
+string encrypt(char str[], char keyT[5][5], int ps)
+{
+    int i, a[4];
+
+    for (i = 0; i < ps; i += 2) {
+
+        search(keyT, str[i], str[i + 1], a);
+
+        if (a[0] == a[2]) {
+            str[i] = keyT[a[0]][mod_5(a[1] + 1)];
+            str[i + 1] = keyT[a[0]][mod_5(a[3] + 1)];
+        }
+        else if (a[1] == a[3]) {
+            str[i] = keyT[mod_5(a[0] + 1)][a[1]];
+            str[i + 1] = keyT[mod_5(a[2] + 1)][a[1]];
+        }
+        else {
+            str[i] = keyT[a[0]][a[3]];
+            str[i + 1] = keyT[a[2]][a[1]];
+        }
+    }
+    return str;
+}
+
+string encryptByPlayfairCipher(char str[], char key[])
+{
+    char ps, ks, keyT[5][5];
+
+    ks = strlen(key);
+    ks = removeSpaces(key, ks);
+    toLowerCase(key, ks);
+
+    ps = strlen(str);
+    toLowerCase(str, ps);
+    ps = removeSpaces(str, ps);
+
+    ps = prepare(str, ps);
+
+    generateKeyTable_enc(key, ks, keyT);
+
+    string s1=encrypt(str, keyT, ps);
+    cout<<"Your Encrypted Message is: "<<s1<<endl;
+    return s1;
+}
+
+int mod5(int a)
+{
+    if (a < 0)
+        a += 5;
+    return (a % 5);
+}
+
+// Function to decrypt
+string decrypt(char str[], char keyT[5][5], int ps)
+{
+    int i, a[4];
+    for (i = 0; i < ps; i += 2) {
+        search(keyT, str[i], str[i + 1], a);
+        if (a[0] == a[2]) {
+            str[i] = keyT[a[0]][mod5(a[1] - 1)];
+            str[i + 1] = keyT[a[0]][mod5(a[3] - 1)];
+        }
+        else if (a[1] == a[3]) {
+            str[i] = keyT[mod5(a[0] - 1)][a[1]];
+            str[i + 1] = keyT[mod5(a[2] - 1)][a[1]];
+        }
+        else {
+            str[i] = keyT[a[0]][a[3]];
+            str[i + 1] = keyT[a[2]][a[1]];
+        }
+    }
+    return str;
+}
+
+string decryptByPlayfairCipher(char str[], char key[])
+{
+    char ps, ks, keyT[5][5];
+
+    // Key
+    ks = strlen(key);
+    ks = removeSpaces(key, ks);
+    toLowerCase(key, ks);
+
+    // ciphertext
+    ps = strlen(str);
+    toLowerCase(str, ps);
+    ps = removeSpaces(str, ps);
+
+    generateKeyTable_dec(key, ks, keyT);
+
+    string s1=decrypt(str, keyT, ps);
+    cout<<"Your Decrypted Message is: "<<s1<<endl;
+    return s1;
 }
 
 int main() {
-    std::map<std::string, std::string> user_data;
+    map<string, string> user_data;
 
     while (true) {
-        std::cout << "\n1. Register" << std::endl;
-        std::cout << "2. Login" << std::endl;
-        std::cout << "3. Quit" << std::endl;
+        cout << "**********************************" << endl;
+        cout << "* HELLO !! WELCOME TO ENCRYPTION *" << endl;
+        cout << "* DECRYPTION INTERFACE MADE BY   *" << endl;
+        cout << "* YASH RATHORE AND HEMANT JHA    *" << endl;
+        cout << "**********************************" << endl<<endl<<endl;
+
+        cout << "* CAESAR ENCRYPTION AND DECRYPTION USE NUMERIC KEY *" << endl;
+        cout << "* VIGENERE ENCRYPTION AND DECRYPTION USE WORD AS KEY *" << endl;
+        cout << "* PLAYFAIR ENCRYPTION AND DECRYPTION USE BOTH KEY AND MESSAGE AS SINGLE WORD *" << endl<< endl<< endl;
+
+        cout << "******************************" << endl;
+        cout << "*_______ 1.REGISTER _________*" << endl;
+        cout << "*_______ 2.LOGIN ____________*" << endl;
+        cout << "*_______ 3.QUIT _____________*" << endl;
+        cout << "******************************" << endl;
 
         int choice;
-        std::cin >> choice;
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        cin >> choice;
 
         if (choice == 1) {
-            std::string username;
-            std::cout << "Enter a username: ";
-            std::cin >> username;
-
-            std::string password = "password"; // Change this to generate a random password.
+            string username, password;
+            cout << "Enter your username: ";
+            cin >> username;
+            cout << "Enter your password: ";
+            cin >> password;
             user_data[username] = password;
+            cout << "REGISTRATION SUCCESSFUL. YOUR PASSWORD IS: " << password << endl;
 
-            std::cout << "Registration successful. Your password is: " << password << std::endl;
         } else if (choice == 2) {
-            std::string username;
-            std::string password;
-
-            std::cout << "Enter your username: ";
-            std::cin >> username;
-            std::cout << "Enter your password: ";
-            std::cin >> password;
+            string username, password;
+            cout << "Enter your username: ";
+            cin >> username;
+            cout << "Enter your password: ";
+            cin >> password;
 
             if (user_data.find(username) != user_data.end() && user_data[username] == password) {
-                std::cout << "Login successful." << std::endl;
+                cout << "Login Successful." << endl;
 
                 while (true) {
-                    std::cout << "\n1. Encrypt" << std::endl;
-                    std::cout << "2. Decrypt" << std::endl;
-                    std::cout << "3. Logout" << std::endl;
+                    cout << "**************************" << endl;
+                    cout << "*______ 1.ENCRYPT _______*" << endl;
+                    cout << "*______ 2.DECRYPT _______*" << endl;
+                    cout << "*______ 3.LOGOUT  _______*" << endl;
+                    cout << "**************************" << endl;
 
                     int sub_choice;
-                    std::cin >> sub_choice;
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    cin >> sub_choice;
 
                     if (sub_choice == 1) {
-                        std::string message;
-                        std::cout << "Enter the message to encrypt: ";
-                        std::getline(std::cin, message);
+                        string message;
+                        cout << "Enter the message to Encrypt: ";
+                        cin.ignore();
+                        getline(cin, message);
 
-                        std::cout << "\nSelect an encryption method:" << std::endl;
-                        std::cout << "1. Caesar Cipher" << std::endl;
-                        std::cout << "2. Vigenère Cipher" << std::endl;
-                        std::cout << "3. RSA" << std::endl;
+                        cout << "************************************" << endl;
+                        cout << "*    Select an encryption method   *" << endl;
+                        cout << "*    1. Caesar Cipher              *" << endl;
+                        cout << "*    2. Vigenere Cipher            *" << endl;
+                        cout << "*    3. Playfair Cipher            *" << endl;
+                        cout << "************************************" << endl;
 
                         int encryption_method;
-                        std::cin >> encryption_method;
+                        cin >> encryption_method;
 
                         if (encryption_method == 1) {
                             int shift;
-                            std::cout << "Enter the Caesar Cipher shift: ";
-                            std::cin >> shift;
-                            std::string encrypted_message = caesar_cipher_encrypt(message, shift);
-                            std::cout << "Encrypted message: " << encrypted_message << std::endl;
+                            cout << "Enter the Caesar Cipher shift: ";
+                            cin >> shift;
+                            string encrypted_message = caesar_enc(message, shift);
+                            cout << "Encrypted message: " << encrypted_message << endl;
                         } else if (encryption_method == 2) {
-                            std::string key;
-                            std::cout << "Enter the Vigenère Cipher key: ";
-                            std::cin >> key;
-                            std::string encrypted_message = vigenere_cipher_encrypt(message, key);
-                            std::cout << "Encrypted message: " << encrypted_message << std::endl;
-                        } else if (encryption_method == 3) {
-                            std::string private_key, public_key;
-                            if (rsa_generate_key_pair(private_key, public_key)) {
-                                std::string encrypted_message = rsa_encrypt(public_key, message);
-                                std::cout << "Public key:\n" << public_key << std::endl;
-                                std::cout << "Encrypted message: " << encrypted_message << std::endl;
+                            string key;
+                            cout << "Enter the Vigenere Cipher key: ";
+                            cin >> key;
+                            string encrypted_message = vigenere_enc(message, key);
+                            cout << "Encrypted message: " << encrypted_message << endl;
+                        }else if (encryption_method == 3) {
+                            char key[SIZE],str[SIZE],str2[SIZE];
+                            int x=message.length();
+                            for(int i=0;i<x;i++){
+                                str[i]=message.at(i);
                             }
-                        } else {
-                            std::cout << "Invalid option. Please try again." << std::endl;
+                            cout << "Enter the Playfair Cipher key: ";
+                            cin >> key;
+                            encryptByPlayfairCipher(str, key);
+                        }else {
+                            cout << "INVALID OPTION. PLEASE TRY AGAIN" << endl;
                         }
                     } else if (sub_choice == 2) {
-                        std::string encrypted_message;
-                        std::cout << "Enter the message to decrypt: ";
-                        std::cin.ignore();
-                        std::getline(std::cin, encrypted_message);
+                        string encrypted_message;
+                        cout << "Enter the message to decrypt: ";
+                        cin.ignore();
+                        getline(cin, encrypted_message);
 
-                        std::cout << "\nSelect a decryption method:" << std::endl;
-                        std::cout << "1. Caesar Cipher" << std::endl;
-                        std::cout << "2. Vigenère Cipher" << std::endl;
-                        std::cout << "3. RSA" << std::endl;
+                        cout << "************************************" << endl;
+                        cout << "*    Select an decryption method   *" << endl;
+                        cout << "*    1. Caesar Cipher              *" << endl;
+                        cout << "*    2. Vigenere Cipher            *" << endl;
+                        cout << "*    3. Playfair Cipher            *" << endl;
+                        cout << "************************************" << endl;
 
                         int decryption_method;
-                        std::cin >> decryption_method;
+                        cin >> decryption_method;
 
                         if (decryption_method == 1) {
                             int shift;
-                            std::cout << "Enter the Caesar Cipher shift: ";
-                            std::cin >> shift;
-                            std::string decrypted_message = caesar_cipher_decrypt(encrypted_message, shift);
-                            std::cout << "Decrypted message: " << decrypted_message << std::endl;
+                            cout << "Enter the Caesar Cipher shift: ";
+                            cin >> shift;
+                            string decrypted_message = caesar_dec(encrypted_message, shift);
+                            cout << "Decrypted message: " << decrypted_message << endl;
                         } else if (decryption_method == 2) {
-                            std::string key;
-                            std::cout << "Enter the Vigenère Cipher key: ";
-                            std::cin >> key;
-                            std::string decrypted_message = vigenere_cipher_decrypt(encrypted_message, key);
-                            std::cout << "Decrypted message: " << decrypted_message << std::endl;
-                        } else if (decryption_method == 3) {
-                            std::cout << "RSA decryption is not supported in this example." << std::endl;
-                        } else {
-                            std::cout << "Invalid option. Please try again." << std::endl;
+                            string key;
+                            cout << "Enter the Vigenere Cipher key: ";
+                            cin >> key;
+                            string decrypted_message = vigenere_dec(encrypted_message, key);
+                            cout << "Decrypted message: " << decrypted_message << endl;
+                        } else if(decryption_method == 3){
+                            char key[SIZE],str[SIZE];
+                            int x=encrypted_message.length();
+                            for(int i=0;i<x;i++){
+                                str[i]=encrypted_message.at(i);
+                            }
+                            cout << "Enter the Playfair Cipher key: ";
+                            cin >> key;
+                            decryptByPlayfairCipher(str, key);
+                        }else {
+                            cout << "Invalid option. Please try again." << endl;
                         }
                     } else if (sub_choice == 3) {
-                        std::cout << "Logged out." << std::endl;
+                        cout << "Logged out." << endl;
                         break;
                     } else {
-                        std::cout << "Invalid option. Please try again." << std::endl;
+                        cout << "Invalid option. Please try again." << endl;
                     }
                 }
             } else {
-                std::cout << "Invalid username or password. Please try again." << std::endl;
+                cout << "Invalid username or password. Please try again." << endl;
             }
         } else if (choice == 3) {
-            std::cout << "Goodbye!" << std::endl;
+            cout << "______________________________" << endl;
+            cout << "*           Goodbye!         *" << endl;
+            cout << "______________________________" << endl;
             break;
         } else {
-            std::cout << "Invalid option. Please try again." << std::endl;
+            cout << "Invalid option. Please try again." << endl;
         }
     }
 
